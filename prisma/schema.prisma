@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  GRATUIT
+  PAYANT
+}
+
+enum ParticipationStatus {
+  INSCRIT
+  PAYE
+  PRESENT
+  ANNULE
+}
+
+enum FeedbackType {
+  EVENEMENT
+  PLATEFORME
+}
+
+model User {
+  id         String   @id @default(uuid())
+  nom        String
+  email      String   @unique
+  motDePasse String
+  createdAt  DateTime @default(now())
+
+  events Event[]
+}
+
+model Event {
+  id            String    @id @default(uuid())
+  titre         String
+  description   String
+  lieu          String
+  dateEvenement DateTime
+  image         String?
+  nombrePlaces  Int
+  type          EventType
+  prix          Decimal?  @db.Decimal(10, 2)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organisateur   User   @relation(fields: [organisateurId], references: [id])
+  organisateurId String
+
+  participations Participation[]
+
+  @@index([organisateurId])
+}
+
+model Participation {
+  id         String              @id @default(uuid())
+  statut     ParticipationStatus @default(INSCRIT)
+  qrCode     String              @unique
+  qrScanneAt DateTime?
+  createdAt  DateTime            @default(now())
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+
+  participantNom   String
+  participantEmail String
+  participantTel   String?
+
+  paiement      Paiement? @relation(fields: [paiementIndex], references: [index])
+  feedback      Feedback?
+  paiementIndex String?
+
+  @@unique([eventId, participantEmail])
+  @@index([eventId])
+  @@index([qrCode])
+}
+
+model Paiement {
+  index            String          @id @default(uuid())
+  montant          Decimal         @db.Decimal(10, 2)
+  referenceFedaPay String          @unique
+  statut           String
+  createdAt        DateTime        @default(now())
+  participations   Participation[]
+}
+
+model Feedback {
+  id          String       @id @default(uuid())
+  type        FeedbackType
+  note        Int?
+  commentaire String?
+  createdAt   DateTime     @default(now())
+
+  participation   Participation? @relation(fields: [participationId], references: [id])
+  participationId String?        @unique
+}

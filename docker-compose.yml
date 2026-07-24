@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: korumm
+      POSTGRES_PASSWORD: korumm_dev_password
+      POSTGRES_DB: korumm_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - korumm_pgdata:/var/lib/postgresql/data
+volumes:
+  korumm_pgdata:
