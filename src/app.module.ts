@@ -7,10 +7,11 @@ import { EventsModule } from './events/events.module';
 import { ParticipationsModule } from './participations/participations.module';
 import { FedapayModule } from './fedapay/fedapay.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { CheckinModule } from './checkin/checkin.module';
 
 
 @Module({
-  imports: [PrismaModule, AuthModule, EventsModule, ParticipationsModule, FedapayModule, WebhooksModule],
+  imports: [PrismaModule, AuthModule, EventsModule, ParticipationsModule, FedapayModule, WebhooksModule, CheckinModule],
   controllers: [AppController],
   providers: [AppService],
 })
