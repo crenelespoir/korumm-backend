@@ -5,9 +5,12 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { ParticipationsModule } from './participations/participations.module';
+import { FedapayModule } from './fedapay/fedapay.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+
 
 @Module({
-  imports: [PrismaModule, AuthModule, EventsModule, ParticipationsModule],
+  imports: [PrismaModule, AuthModule, EventsModule, ParticipationsModule, FedapayModule, WebhooksModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -2,11 +2,15 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 import { randomBytes } from 'crypto';
 import { EventType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { FedapayService } from 'src/fedapay/fedapay.service';
 import { CreateParticipationDto } from './dto/create-participation.dto';
 
 @Injectable()
 export class ParticipationsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly fedapayService: FedapayService
+    ) {}
 
     async create(dto: CreateParticipationDto) {
         // Vérifier si l'événement existe
@@ -19,18 +23,15 @@ export class ParticipationsService {
             throw new NotFoundException('Événement introuvable');
         }
 
-        if (event.type === EventType.PAYANT) {
-            throw new BadRequestException("Cet évènement est payant, l'inscription nécessite un paiement (fonctionnalité à venir)");
-        }
-
         if (event._count.participations >= event.nombrePlaces) {
             throw new BadRequestException('Nombre de places atteint.');
         }
 
         const qrCode = randomBytes(16).toString('hex');
 
+        let participation;
         try {
-            return await this.prisma.participation.create({
+            participation = await this.prisma.participation.create({
                 data: {
                     eventId: dto.eventId,
                     participantNom: dto.participantNom,
@@ -45,6 +46,31 @@ export class ParticipationsService {
             }
             throw error;
         }
+
+        if (event.type === EventType.GRATUIT) {
+            return { participation, paymentUrl: null };
+        }   
+
+        if (!event.prix) {
+            throw new BadRequestException('Le prix de l’événement est manquant.');
+        }
+
+        const { transactionId, paymentUrl } = await this.fedapayService.creerTransactionEtLienPaiement({
+            montant: Number(event.prix),
+            description: `Inscription - ${event.titre}`,
+            participantNom: dto.participantNom,
+            participantEmail: dto.participantEmail,
+        });
+
+        await this.prisma.paiement.create({
+            data: {
+                montant: event.prix,
+                referenceFedaPay: String(transactionId),
+                statut: 'pending',
+                participationId: participation.id,
+            },
+        });
+        return { participation, paymentUrl };
     }
 
     async findByEvent(eventId: string) {

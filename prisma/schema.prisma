@@ -69,9 +69,8 @@ model Participation {
   participantEmail String
   participantTel   String?
 
-  paiement      Paiement? @relation(fields: [paiementIndex], references: [index])
-  feedback      Feedback?
-  paiementIndex String?
+  paiement Paiement?
+  feedback Feedback?
 
   @@unique([eventId, participantEmail])
   @@index([eventId])
@@ -79,12 +78,14 @@ model Participation {
 }
 
 model Paiement {
-  index            String          @id @default(uuid())
-  montant          Decimal         @db.Decimal(10, 2)
-  referenceFedaPay String          @unique
+  id               String   @id @default(uuid())
+  montant          Decimal  @db.Decimal(10, 2)
+  referenceFedaPay String   @unique
   statut           String
-  createdAt        DateTime        @default(now())
-  participations   Participation[]
+  createdAt        DateTime @default(now())
+
+  participation   Participation @relation(fields: [participationId], references: [id])
+  participationId String        @unique
 }
 
 model Feedback {
